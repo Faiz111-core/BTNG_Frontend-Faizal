@@ -1,11 +1,257 @@
+
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FoodOrder - Pesan Makanan</title>
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f7f9f7;
+      color: #26332b;
+    }
+
+    header {
+      background: white;
+      padding: 20px 8%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 8px #0000000d;
+    }
+
+    .logo {
+      color: #26834a;
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    .hero {
+      text-align: center;
+      padding: 55px 20px;
+      background: #e7f5e9;
+    }
+
+    .hero h1 { margin-bottom: 10px; }
+    .hero p { color: #66736b; }
+
+    main {
+      max-width: 1100px;
+      margin: 35px auto;
+      padding: 0 20px;
+    }
+
+    .menu {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+    }
+
+    .card, .cart {
+      background: white;
+      border-radius: 12px;
+      padding: 18px;
+      box-shadow: 0 3px 12px #0000000a;
+    }
+
+    .food-icon {
+      font-size: 65px;
+      text-align: center;
+      background: #f0f7ef;
+      padding: 25px;
+      border-radius: 10px;
+    }
+
+    .card h3 { margin-bottom: 8px; }
+    .price { color: #26834a; font-weight: bold; }
+
+    button {
+      border: none;
+      background: #26834a;
+      color: white;
+      padding: 11px 15px;
+      border-radius: 7px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    button:hover { background: #1c683a; }
+    .card button { width: 100%; }
+
+    .cart { margin-top: 35px; }
+
+    .cart-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 0;
+      border-bottom: 1px solid #eee;
+    }
+
+    .cart-item button {
+      padding: 5px 10px;
+    }
+
+    .qty {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .total {
+      text-align: right;
+      font-size: 20px;
+      font-weight: bold;
+      margin: 20px 0;
+    }
+
+    .checkout { width: 100%; }
+
+    footer {
+      text-align: center;
+      padding: 25px;
+      color: #777;
+    }
+
+    @media (max-width: 500px) {
+      header { padding: 18px; }
+      .cart-item { flex-wrap: wrap; }
+    }
+  </style>
 </head>
 <body>
-    
+
+<header>
+  <div class="logo">FoodOrder</div>
+  <div>Keranjang: <span id="count">0</span></div>
+</header>
+
+<section class="hero">
+  <h1>Pesan Makanan Favoritmu</h1>
+  <p>Enak, praktis, dan harga bersahabat.</p>
+</section>
+
+<main>
+  <h2>Menu Makanan</h2>
+  <div class="menu" id="menu"></div>
+
+  <section class="cart">
+    <h2>Keranjang Pesanan</h2>
+    <div id="cart-list">
+      <p>Keranjang masih kosong.</p>
+    </div>
+    <div class="total">
+      Total: <span id="total">Rp0</span>
+    </div>
+    <button class="checkout" onclick="checkout()">
+      Checkout Sekarang
+    </button>
+  </section>
+</main>
+
+<footer>
+  &copy; 2026 FoodOrder. All Rights Reserved.
+</footer>
+
+<script>
+  const foods = [
+    { id: 1, name: "Nasi Goreng", price: 18000, icon: "🍛" },
+    { id: 2, name: "Mie Ayam", price: 15000, icon: "🍜" },
+    { id: 3, name: "Ayam Geprek", price: 20000, icon: "🍗" },
+    { id: 4, name: "Es Teh", price: 5000, icon: "🥤" }
+  ];
+
+  let cart = {};
+
+  const rupiah = number =>
+    "Rp" + number.toLocaleString("id-ID");
+
+  function showMenu() {
+    document.getElementById("menu").innerHTML =
+      foods.map(food => `
+        <div class="card">
+          <div class="food-icon">${food.icon}</div>
+          <h3>${food.name}</h3>
+          <p class="price">${rupiah(food.price)}</p>
+          <button onclick="addCart(${food.id})">
+            + Tambah Pesanan
+          </button>
+        </div>
+      `).join("");
+  }
+
+  function addCart(id) {
+    cart[id] = (cart[id] || 0) + 1;
+    showCart();
+  }
+
+  function changeQty(id, amount) {
+    if (!cart[id]) return;
+
+    cart[id] += amount;
+
+    if (cart[id] <= 0) {
+      delete cart[id];
+    }
+
+    showCart();
+  }
+
+  function showCart() {
+    const list = document.getElementById("cart-list");
+    const ids = Object.keys(cart);
+    let total = 0;
+    let count = 0;
+
+    if (ids.length === 0) {
+      list.innerHTML = "<p>Keranjang masih kosong.</p>";
+    } else {
+      list.innerHTML = ids.map(id => {
+        const food = foods.find(f => f.id === Number(id));
+        const qty = cart[id];
+
+        total += food.price * qty;
+        count += qty;
+
+        return `
+          <div class="cart-item">
+            <div>
+              <strong>${food.name}</strong>
+              <div>${rupiah(food.price * qty)}</div>
+            </div>
+            <div class="qty">
+              <button onclick="changeQty(${id}, -1)">-</button>
+              <span>${qty}</span>
+              <button onclick="changeQty(${id}, 1)">+</button>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    document.getElementById("total").textContent = rupiah(total);
+    document.getElementById("count").textContent = count;
+  }
+
+  function checkout() {
+    if (Object.keys(cart).length === 0) {
+      alert("Silakan pilih makanan terlebih dahulu.");
+      return;
+    }
+
+    alert("Pesanan berhasil dibuat! Terima kasih.");
+    cart = {};
+    showCart();
+  }
+
+  showMenu();
+  showCart();
+</script>
+
 </body>
 </html>
